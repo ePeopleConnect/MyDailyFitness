@@ -8,7 +8,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "deploy": "gh-pages --nojekyll -d dist -t",
+    "predeploy": "expo export -p web && shx touch dist/.gitignore && shx cp dist/index.html dist/404.html"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -16,6 +18,7 @@
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
     "expo": "~53.0.20",
+    "expo-audio": "~0.4.8",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.7",
     "expo-font": "~13.3.2",
@@ -36,15 +39,16 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-web": "~0.20.0",
-    "react-native-webview": "13.13.5",
-    "expo-audio": "~0.4.8"
+    "react-native-webview": "13.13.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
-    "typescript": "~5.8.3",
     "eslint": "^9.25.0",
-    "eslint-config-expo": "~9.2.0"
+    "eslint-config-expo": "~9.2.0",
+    "gh-pages": "^6.3.0",
+    "shx": "^0.4.0",
+    "typescript": "~5.8.3"
   },
   "private": true
 }
