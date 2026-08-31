@@ -119,7 +119,7 @@ export default function LibraryScreen() {
       <FlatList
         data={visible}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100, paddingHorizontal: 16, alignSelf: 'center', width: '100%', maxWidth: 520 }}
         ListEmptyComponent={
           <Text style={[styles.empty, { color: theme.muted }]}>
             Nothing matches. Clear the search, or add an exercise.
@@ -347,12 +347,12 @@ function Field({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, alignSelf: 'center', width: '100%', maxWidth: 520 },
   title: { fontSize: 30, fontWeight: '800', letterSpacing: -0.5 },
   addButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 20 },
   addButtonText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  search: { marginHorizontal: 16, marginTop: 14, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 15 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  search: { alignSelf: 'center', width: '100%', maxWidth: 520, marginHorizontal: 16, marginTop: 14, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 15 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingVertical: 12, alignSelf: 'center', width: '100%', maxWidth: 520 },
   chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18, borderWidth: 1 },
   chipText: { fontSize: 13, fontWeight: '600' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 10 },

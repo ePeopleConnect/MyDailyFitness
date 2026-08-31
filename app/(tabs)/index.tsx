@@ -58,6 +58,13 @@ export default function RunScreen() {
   const tint = current ? PHASE_TINT[current.phase] : palette.violet;
   const ring = Math.min(width - 80, 280);
 
+  // A rep target is free text, and some of it is a sentence: "15-20 seconds hold" is three words
+  // that overflowed the ring at a fixed 42px and spilled outside the border. Sized against the
+  // length so the longest realistic target still lands inside the circle, and wrapped rather than
+  // truncated - "8 each" would be a lie where "8 each side" is the instruction.
+  const repsText = current?.reps ?? '-';
+  const repsFontSize = repsText.length > 18 ? 20 : repsText.length > 12 ? 25 : repsText.length > 6 ? 32 : 42;
+
   if (!ready) {
     return (
       <View style={[styles.centred, { backgroundColor: theme.background }]}>
@@ -136,7 +143,13 @@ export default function RunScreen() {
         <View style={[styles.ring, { width: ring, height: ring, borderRadius: ring / 2, borderColor: tint }]}>
           {isRepBased ? (
             <>
-              <Text style={[styles.reps, { color: theme.text }]}>{current?.reps ?? '-'}</Text>
+              <Text
+                style={[
+                  styles.reps,
+                  { color: theme.text, fontSize: repsFontSize, lineHeight: repsFontSize * 1.15, maxWidth: ring * 0.76 },
+                ]}>
+                {repsText}
+              </Text>
               <Text style={[styles.ringCaption, { color: theme.muted }]}>reps</Text>
             </>
           ) : (
@@ -258,7 +271,7 @@ export default function RunScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   centred: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },
-  content: { paddingHorizontal: 20, alignItems: 'center' },
+  content: { paddingHorizontal: 20, alignItems: 'center', alignSelf: 'center', width: '100%', maxWidth: 520 },
   headerRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: 12 },
   routineName: { fontSize: 13, fontWeight: '600' },
   phase: { fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
@@ -268,7 +281,7 @@ const styles = StyleSheet.create({
   progressLabel: { alignSelf: 'flex-start', marginTop: 6, fontSize: 12 },
   ring: { borderWidth: 10, alignItems: 'center', justifyContent: 'center', marginTop: 24 },
   time: { fontSize: 54, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  reps: { fontSize: 42, fontWeight: '800' },
+  reps: { fontWeight: '800', textAlign: 'center' },
   ringCaption: { fontSize: 13, marginTop: 2, textTransform: 'uppercase', letterSpacing: 1.2 },
   exerciseName: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginTop: 24 },
   howToRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },

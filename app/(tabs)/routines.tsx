@@ -63,7 +63,7 @@ export default function RoutinesScreen() {
       <FlatList
         data={routines}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 100 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 100, alignSelf: 'center', width: '100%', maxWidth: 520 }}
         ListEmptyComponent={
           <Text style={[styles.empty, { color: theme.muted }]}>
             No routines yet. Create one, add exercises from your library, and it becomes what the
@@ -457,7 +457,7 @@ function Stepper({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, alignSelf: 'center', width: '100%', maxWidth: 520 },
   title: { fontSize: 30, fontWeight: '800', letterSpacing: -0.5 },
   addButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 20 },
   addButtonText: { color: '#fff', fontWeight: '700', fontSize: 14 },

@@ -57,7 +57,7 @@ export default function HistoryScreen() {
       <FlatList
         data={logs}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 100 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 100, alignSelf: 'center', width: '100%', maxWidth: 520 }}
         ListEmptyComponent={
           <Text style={[styles.empty, { color: theme.muted }]}>
             No sessions recorded yet. Finish a workout and it will show up here.
@@ -144,9 +144,9 @@ function currentStreak(logs: WorkoutLog[]): number {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, alignSelf: 'center', width: '100%', maxWidth: 520 },
   title: { fontSize: 30, fontWeight: '800', letterSpacing: -0.5 },
-  statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingVertical: 16 },
+  statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingVertical: 16, alignSelf: 'center', width: '100%', maxWidth: 520 },
   stat: { flex: 1, borderWidth: 1, borderRadius: 14, padding: 13, alignItems: 'center' },
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
   statValue: { fontSize: 26, fontWeight: '800', marginTop: 3, fontVariant: ['tabular-nums'] },
