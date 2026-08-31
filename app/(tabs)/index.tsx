@@ -1,6 +1,6 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { useAudioPlayer } from 'expo-audio';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,17 +31,50 @@ export default function RunScreen() {
 
   const player = useAudioPlayer(require('../../assets/beep.mp3'));
 
-  const cue = useCallback(() => {
-    if (!preferences.soundEnabled) return;
+  /** Briefly true when a cue fires, so the end of an interval is visible as well as audible. */
+  const [flash, setFlash] = useState(false);
+
+  const beep = useCallback(() => {
     try {
       // Rewound first: replaying a player that already reached the end is a no-op, so without
       // this the cue sounds once and is then silent for the rest of the session.
-      player.seekTo(0);
+      void player.seekTo(0);
       player.play();
     } catch {
       // A busy or missing audio route must never interrupt a workout.
     }
-  }, [player, preferences.soundEnabled]);
+  }, [player]);
+
+  const audioUnlocked = useRef(false);
+
+  /**
+   * Plays the cue once from inside a real tap, which is what makes every later cue audible.
+   *
+   * Mobile browsers - iOS Safari most strictly - only allow audio whose FIRST playback happens
+   * inside a user gesture. Every cue in a workout comes from a timer, so without this the very
+   * first attempt is blocked and the player stays blocked for the life of the page: silent for
+   * the entire session, with no error anywhere.
+   *
+   * Deliberately audible rather than a muted unlock trick. A muted play does not reliably lift
+   * the restriction on iOS, and a beep when you press Start is a useful "go" signal in its own
+   * right rather than a workaround the user has to wonder about.
+   */
+  const unlockAudio = useCallback(() => {
+    if (audioUnlocked.current || !preferences.soundEnabled) return;
+    audioUnlocked.current = true;
+    beep();
+  }, [beep, preferences.soundEnabled]);
+
+  const cue = useCallback(() => {
+    // The flash is not a fallback for sound being off - it fires either way. On a gym floor the
+    // phone is often face-up and on silent, and a countdown that ends with no signal at all is
+    // the thing that makes you miss the change.
+    setFlash(true);
+    setTimeout(() => setFlash(false), 700);
+
+    if (!preferences.soundEnabled) return;
+    beep();
+  }, [beep, preferences.soundEnabled]);
 
   const session = useWorkoutSession(routine, exerciseById, { onCue: cue });
   const { current, upcoming, status, countdown, plan, index } = session;
@@ -140,7 +173,17 @@ export default function RunScreen() {
           Step {index + 1} of {plan.length}
         </Text>
 
-        <View style={[styles.ring, { width: ring, height: ring, borderRadius: ring / 2, borderColor: tint }]}>
+        <View
+          style={[
+            styles.ring,
+            {
+              width: ring,
+              height: ring,
+              borderRadius: ring / 2,
+              borderColor: tint,
+              backgroundColor: flash ? tint : 'transparent',
+            },
+          ]}>
           {isRepBased ? (
             <>
               <Text
@@ -154,8 +197,10 @@ export default function RunScreen() {
             </>
           ) : (
             <>
-              <Text style={[styles.time, { color: theme.text }]}>{formatDuration(countdown.remaining)}</Text>
-              <Text style={[styles.ringCaption, { color: theme.muted }]}>
+              <Text style={[styles.time, { color: flash ? '#fff' : theme.text }]}>
+                {formatDuration(countdown.remaining)}
+              </Text>
+              <Text style={[styles.ringCaption, { color: flash ? '#fff' : theme.muted }]}>
                 {isResting ? 'resting' : countdown.running ? 'go' : 'paused'}
               </Text>
             </>
@@ -206,12 +251,22 @@ export default function RunScreen() {
         </Pressable>
 
         {status === 'idle' ? (
-          <Pressable onPress={session.start} style={[styles.primaryButton, { backgroundColor: tint }]}>
+          <Pressable
+            onPress={() => {
+              unlockAudio();
+              session.start();
+            }}
+            style={[styles.primaryButton, { backgroundColor: tint }]}>
             <FontAwesome name="play" size={16} color="#fff" />
             <Text style={styles.primaryButtonText}>Start</Text>
           </Pressable>
         ) : isRepBased ? (
-          <Pressable onPress={() => session.next(false)} style={[styles.primaryButton, { backgroundColor: tint }]}>
+          <Pressable
+            onPress={() => {
+              unlockAudio();
+              session.next(false);
+            }}
+            style={[styles.primaryButton, { backgroundColor: tint }]}>
             <FontAwesome name="check" size={16} color="#fff" />
             <Text style={styles.primaryButtonText}>Done</Text>
           </Pressable>
@@ -221,7 +276,12 @@ export default function RunScreen() {
             <Text style={styles.primaryButtonText}>Pause</Text>
           </Pressable>
         ) : (
-          <Pressable onPress={session.resume} style={[styles.primaryButton, { backgroundColor: tint }]}>
+          <Pressable
+            onPress={() => {
+              unlockAudio();
+              session.resume();
+            }}
+            style={[styles.primaryButton, { backgroundColor: tint }]}>
             <FontAwesome name="play" size={16} color="#fff" />
             <Text style={styles.primaryButtonText}>Resume</Text>
           </Pressable>
