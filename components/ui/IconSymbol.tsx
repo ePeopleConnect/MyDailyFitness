@@ -30,6 +30,9 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'figure.walk': 'directions-walk', // Maps to a walking icon in Material Icons
   'info.circle': 'info', // Maps to an information icon in Material Icons
+  'list.bullet': 'format-list-bulleted',
+  'dumbbell': 'fitness-center',
+  'clock.arrow.circlepath': 'history',
 } as IconMapping;
 
 /**
