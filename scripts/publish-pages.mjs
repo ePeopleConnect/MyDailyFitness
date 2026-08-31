@@ -11,11 +11,15 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const run = (cmd, args, cwd) =>
-  execFileSync(cmd, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' });
+// git runs without a shell. On Windows `shell: true` re-splits the arguments, which breaks any
+// argument containing a space - the commit message was being cut at the first one.
+const git = (args, cwd) => execFileSync('git', args, { cwd, stdio: 'inherit' });
 
-const capture = (cmd, args) =>
-  execFileSync(cmd, args, { encoding: 'utf8', shell: process.platform === 'win32' }).trim();
+// npx IS a shim on Windows and does need one.
+const run = (cmd, args) =>
+  execFileSync(cmd, args, { stdio: 'inherit', shell: process.platform === 'win32' });
+
+const capture = (cmd, args) => execFileSync(cmd, args, { encoding: 'utf8' }).trim();
 
 const remote = capture('git', ['remote', 'get-url', 'origin']);
 console.log(`\n  Publishing to ${remote} (gh-pages)\n`);
@@ -32,13 +36,26 @@ try {
   // directory. Without this the site serves a blank page with 404s for all its scripts.
   writeFileSync(join(staging, '.nojekyll'), '');
 
-  run('git', ['init', '-q', '-b', 'gh-pages'], staging);
-  run('git', ['add', '-A'], staging);
-  run('git', ['commit', '-q', '-m', `Publish ${new Date().toISOString()}`], staging);
-  run('git', ['remote', 'add', 'origin', remote], staging);
+  git(['init', '-q', '-b', 'gh-pages'], staging);
+
+  // A fresh repository inherits global config, which a CI machine or a new checkout may not
+  // have - and git refuses to commit without an identity.
+  const identity = (key, fallback) => {
+    try {
+      return capture('git', ['config', '--get', key]) || fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  git(['config', 'user.name', identity('user.name', 'My Daily Fitness')], staging);
+  git(['config', 'user.email', identity('user.email', 'noreply@example.com')], staging);
+
+  git(['add', '-A'], staging);
+  git(['commit', '-q', '-m', `Publish ${new Date().toISOString()}`], staging);
+  git(['remote', 'add', 'origin', remote], staging);
 
   // Force: the published site is a snapshot, not a history worth keeping.
-  run('git', ['push', '-f', 'origin', 'gh-pages'], staging);
+  git(['push', '-f', 'origin', 'gh-pages'], staging);
 
   console.log('\n  Published. Give Pages a minute, then reload on your phone.\n');
 } finally {
