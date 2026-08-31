@@ -5,7 +5,17 @@ import { SymbolViewProps, SymbolWeight } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
+/**
+ * SF Symbol names, narrowed to the plain-string form.
+ *
+ * expo-symbols widened `name` to `SFSymbol | { ios?; android?; web? }` so a caller can supply a
+ * per-platform symbol. That object arm cannot key a Record, which broke this mapping on the SDK
+ * 55 upgrade. Extract pulls out just the string arm, so the mapping keeps working and still
+ * fails the build if a symbol name is misspelled.
+ */
+type SymbolName = Extract<SymbolViewProps['name'], string>;
+
+type IconMapping = Record<SymbolName, ComponentProps<typeof MaterialIcons>['name']>;
 type IconSymbolName = keyof typeof MAPPING;
 
 /**

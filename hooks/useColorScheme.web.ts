@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 
+import type { AppColorScheme } from '@/hooks/useColorScheme';
+
 /**
- * To support static rendering, this value needs to be re-calculated on the client side for web
+ * The web build renders statically first, so the scheme has to be recalculated on the client:
+ * the server has no way to know the visitor's preference, and rendering dark markup that the
+ * browser then corrects produces a visible flash.
  */
-export function useColorScheme() {
+export function useColorScheme(): AppColorScheme {
   const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
@@ -13,9 +17,9 @@ export function useColorScheme() {
 
   const colorScheme = useRNColorScheme();
 
-  if (hasHydrated) {
-    return colorScheme;
+  if (!hasHydrated) {
+    return 'light';
   }
 
-  return 'light';
+  return colorScheme === 'dark' ? 'dark' : 'light';
 }

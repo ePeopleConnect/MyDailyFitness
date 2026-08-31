@@ -143,3 +143,8 @@ vite.config.ts.timestamp-*
 
 expo-env.d.ts
 # @end expo-cli
+# Expo local state (machine-specific)
+.expo/
+
+# Expo web export output
+dist/
