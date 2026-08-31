@@ -1,11 +1,12 @@
 import { FontAwesome } from '@expo/vector-icons';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { palette, useTheme } from '@/constants/theme';
 import { formatDuration } from '@/hooks/useCountdown';
 import { useFitnessData } from '@/hooks/useFitnessData';
+import { exportCsv, exportJson } from '@/storage/exportData';
 import type { WorkoutLog } from '@/types/fitness';
 
 /**
@@ -18,7 +19,20 @@ import type { WorkoutLog } from '@/types/fitness';
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const { logs, clearLogs } = useFitnessData();
+  const { logs, routines, exercises, clearLogs } = useFitnessData();
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const runExport = async (kind: 'json' | 'csv') => {
+    if (logs.length === 0) {
+      setNotice('Nothing to export yet - finish a workout first.');
+      return;
+    }
+    setNotice('Preparing...');
+    const result = kind === 'json'
+      ? await exportJson(logs, routines, exercises)
+      : await exportCsv(logs);
+    setNotice(result.message);
+  };
 
   const summary = useMemo(() => {
     const now = Date.now();
@@ -47,6 +61,23 @@ export default function HistoryScreen() {
           </Pressable>
         ) : null}
       </View>
+
+      <View style={styles.exportRow}>
+        <Pressable onPress={() => void runExport('json')} style={[styles.exportButton, { borderColor: theme.border }]}>
+          <FontAwesome name="download" size={13} color={theme.text} />
+          <Text style={[styles.exportText, { color: theme.text }]}>Export JSON</Text>
+        </Pressable>
+        <Pressable onPress={() => void runExport('csv')} style={[styles.exportButton, { borderColor: theme.border }]}>
+          <FontAwesome name="table" size={13} color={theme.text} />
+          <Text style={[styles.exportText, { color: theme.text }]}>Export CSV</Text>
+        </Pressable>
+      </View>
+
+      {notice ? (
+        <Text style={[styles.notice, { color: theme.muted }]} numberOfLines={2}>
+          {notice}
+        </Text>
+      ) : null}
 
       <View style={styles.statsRow}>
         <Stat label="This week" value={String(summary.sessions)} caption="sessions" theme={theme} />
@@ -147,6 +178,10 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, alignSelf: 'center', width: '100%', maxWidth: 520 },
   title: { fontSize: 30, fontWeight: '800', letterSpacing: -0.5 },
   statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingVertical: 16, alignSelf: 'center', width: '100%', maxWidth: 520 },
+  exportRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 14, alignSelf: 'center', width: '100%', maxWidth: 520 },
+  exportButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1, borderRadius: 12, paddingVertical: 10 },
+  exportText: { fontSize: 13, fontWeight: '700' },
+  notice: { fontSize: 12, paddingHorizontal: 16, paddingTop: 8, alignSelf: 'center', width: '100%', maxWidth: 520 },
   stat: { flex: 1, borderWidth: 1, borderRadius: 14, padding: 13, alignItems: 'center' },
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
   statValue: { fontSize: 26, fontWeight: '800', marginTop: 3, fontVariant: ['tabular-nums'] },
