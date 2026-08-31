@@ -21,8 +21,12 @@ const run = (cmd, args) =>
 
 const capture = (cmd, args) => execFileSync(cmd, args, { encoding: 'utf8' }).trim();
 
-const remote = capture('git', ['remote', 'get-url', 'origin']);
-console.log(`\n  Publishing to ${remote} (gh-pages)\n`);
+// Which remote hosts the Pages site. `origin` is right for a normal clone; PAGES_REMOTE exists
+// because a working copy can have several remotes, and publishing to the wrong one succeeds
+// quietly - it pushes a real branch to a real repository, just not the one serving the site.
+const remoteName = process.env.PAGES_REMOTE || 'origin';
+const remote = capture('git', ['remote', 'get-url', remoteName]);
+console.log(`\n  Publishing to ${remote} (${remoteName} -> gh-pages)\n`);
 
 run('npx', ['expo', 'export', '--platform', 'web']);
 
