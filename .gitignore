@@ -148,3 +148,6 @@ expo-env.d.ts
 
 # Expo web export output
 dist/
+
+# Local static-serve scratch used for verification
+.serve/
