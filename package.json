@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "deploy": "gh-pages --nojekyll -d dist -t",
-    "predeploy": "expo export -p web && shx touch dist/.gitignore && shx cp dist/index.html dist/404.html"
+    "predeploy": "expo export -p web && shx touch dist/.gitignore && shx cp dist/index.html dist/404.html",
+    "publish": "node scripts/publish-pages.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

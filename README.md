@@ -1,5 +1,10 @@
 # My Daily Fitness
 
+**Live: <https://donpotts.github.io/MyDailyFitness/>** - open it on your phone and add it to your
+home screen; it runs offline from there and keeps its data on the device.
+
+Republish after changes with `npm run publish`.
+
 ![Logo](assets/images/react-logo.png)
 
 <p align="center">
