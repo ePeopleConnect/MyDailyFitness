@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { SEED_EXERCISES } from '@/data/seedExercises';
+import { SEED_GYM_MACHINES } from '@/data/gymMachines';
+import { SEED_ROUTINES } from '@/data/seedRoutines';
 import {
   DEFAULT_PREFERENCES,
   type Exercise,
@@ -39,6 +41,12 @@ const SCHEMA_VERSION = 1;
 
 /** Keeps logs from growing without bound on a device nobody ever clears. */
 const MAX_LOGS = 500;
+
+/**
+ * Everything seeded into the library: the original bodyweight exercises plus the gym machines.
+ * Order matters - the Daily Fitness routine is built from the bodyweight set in this order.
+ */
+const ALL_SEEDS = [...SEED_EXERCISES, ...SEED_GYM_MACHINES];
 
 async function readJson<T>(key: string, fallback: T): Promise<T> {
   try {
@@ -146,31 +154,61 @@ export async function savePreferences(preferences: Preferences): Promise<Prefere
 
 // ── Seeding ──────────────────────────────────────────────────────────────────────────────────
 
-/** The routine built from the seed exercises, so a first run has something to press start on. */
-function buildStarterRoutine(exercises: Exercise[]): Routine {
+/**
+ * Builds the seeded routines.
+ *
+ * A routine with no declared steps means "every bodyweight exercise, in seed order" - that is the
+ * original app's daily session, and it should follow whatever the bodyweight library contains
+ * rather than being pinned to a list that then drifts from it. Routines that DO declare steps get
+ * exactly those, which is how the gym circuit keeps its machine-then-step ordering.
+ */
+function buildSeedRoutines(): Routine[] {
   const now = new Date().toISOString();
+  const known = new Set(ALL_SEEDS.map((e) => e.id));
 
-  const steps: RoutineStep[] = exercises.map((exercise) => ({
-    id: newId('step'),
-    exerciseId: exercise.id,
-    phase: exercise.phase,
-    measure: exercise.defaultReps ? 'reps' : 'time',
-    durationSec: exercise.defaultDurationSec,
-    reps: exercise.defaultReps,
-    restAfterSec: exercise.phase === 'workout' ? 15 : 0,
-  }));
+  return SEED_ROUTINES.map((seed) => {
+    const declared = seed.steps.length > 0;
 
-  return {
-    id: 'routine_daily',
-    name: 'Daily Fitness',
-    steps,
-    sets: 1,
-    restBetweenSetsSec: 60,
-    autoAdvance: true,
-    soundEnabled: true,
-    createdAt: now,
-    updatedAt: now,
-  };
+    const steps: RoutineStep[] = declared
+      ? seed.steps
+          // A step naming an exercise that is not seeded would build a plan entry with no
+          // exercise behind it, so it is dropped rather than shown as "Removed exercise" on a
+          // brand-new install.
+          .filter((step) => known.has(step.exerciseId))
+          .map((step) => {
+            const exercise = ALL_SEEDS.find((e) => e.id === step.exerciseId)!;
+            return {
+              id: newId('step'),
+              exerciseId: step.exerciseId,
+              phase: step.phase,
+              measure: exercise.defaultReps ? ('reps' as const) : ('time' as const),
+              durationSec: step.durationSec,
+              reps: exercise.defaultReps,
+              restAfterSec: step.restAfterSec,
+            };
+          })
+      : SEED_EXERCISES.map((exercise) => ({
+          id: newId('step'),
+          exerciseId: exercise.id,
+          phase: exercise.phase,
+          measure: exercise.defaultReps ? ('reps' as const) : ('time' as const),
+          durationSec: exercise.defaultDurationSec,
+          reps: exercise.defaultReps,
+          restAfterSec: exercise.phase === 'workout' ? 15 : 0,
+        }));
+
+    return {
+      id: seed.id,
+      name: seed.name,
+      steps,
+      sets: seed.sets,
+      restBetweenSetsSec: seed.restBetweenSetsSec,
+      autoAdvance: true,
+      soundEnabled: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+  });
 }
 
 /**
@@ -186,11 +224,14 @@ export async function initializeStore(): Promise<void> {
   const existing = await getExercises();
   const byId = new Map(existing.map((e) => [e.id, e]));
 
-  const added: Exercise[] = SEED_EXERCISES.filter((seed) => !byId.has(seed.id)).map((seed) => ({
+  const added: Exercise[] = ALL_SEEDS.filter((seed) => !byId.has(seed.id)).map((seed) => ({
     ...seed,
     source: 'seed' as const,
-    muscleGroup: null,
-    equipment: null,
+    // Kept from the seed when it supplies them - the gym machines carry a muscle group and the
+    // machine name, and overwriting those with null would make the library's search useless for
+    // exactly the entries that need it most.
+    muscleGroup: seed.muscleGroup ?? null,
+    equipment: seed.equipment ?? null,
     archived: false,
   }));
 
@@ -201,7 +242,7 @@ export async function initializeStore(): Promise<void> {
   // Only on a genuinely empty store. Recreating the starter routine whenever it is missing would
   // resurrect one the user deliberately deleted.
   if (storedVersion === 0 && (await getRoutines()).length === 0) {
-    await writeJson(KEYS.routines, [buildStarterRoutine([...existing, ...added])]);
+    await writeJson(KEYS.routines, buildSeedRoutines());
   }
 
   if (storedVersion !== SCHEMA_VERSION) {
